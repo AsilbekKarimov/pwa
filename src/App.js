@@ -1,28 +1,33 @@
 import React, { useEffect, useState } from "react";
 
 function App() {
-  const [product, setProduct] = useState([]);
-  const [loading, setloading] = useState(true);
-  let token = "7141536701:AAEzVqH5ymIR41yxmVGNI8Ynic2jrw88gWc";
-  let CHAT_ID = "954780945";
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const token = process.env.REACT_APP_TELEGRAM_BOT_TOKEN;
+  const CHAT_ID = process.env.REACT_APP_TELEGRAM_CHAT_ID;
 
   useEffect(() => {
     document.querySelector("html").setAttribute("data-theme", "night");
   }, []);
 
-  const getProduct = async () => {
+  const getProducts = async () => {
     try {
       const response = await fetch(`https://dummyjson.com/products`);
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
       const data = await response.json();
       console.log("API Data:", data);
-      setProduct(data.products); 
+      setProducts(data.products);
     } catch (error) {
-      console.log("Error: ", error);
+      console.error("Error fetching products: ", error);
+      setError(error.message);
     } finally {
-      setloading(false);
+      setLoading(false);
     }
   };
-  
 
   const addToBasket = (product) => {
     sendMessage(`Product Added to Basket: 
@@ -47,14 +52,14 @@ function App() {
         }
       );
       const data = await response.json();
-      console.log("Message sent succesfully: ", data);
+      console.log("Message sent successfully: ", data);
     } catch (error) {
-      console.log("ERROR: ", error);
+      console.error("Error sending message: ", error);
     }
   };
 
   useEffect(() => {
-    getProduct();
+    getProducts();
   }, []);
 
   return (
@@ -64,9 +69,13 @@ function App() {
           <div className="h-screen flex justify-center items-center">
             <span className="loading loading-infinity loading-lg text-primary"></span>
           </div>
+        ) : error ? (
+          <div className="h-screen flex justify-center items-center">
+            <p className="text-error">Error: {error}</p>
+          </div>
         ) : (
           <div className="flex flex-wrap gap-x-[3%] gap-y-10 p-10">
-            {product.map((item, id) => (
+            {products.map((item, id) => (
               <div
                 key={id}
                 className="bg-base-300 flex-1 min-w-[22%] w-full rounded-lg shadow-lg shadow-primary"
@@ -74,7 +83,7 @@ function App() {
                 <img src={item.thumbnail} className="w-full" alt="img" />
                 <div className="p-3">
                   <p className="text-primary">{item.title}</p>
-                  <p className="text-primary">{item.price}</p>
+                  <p className="text-primary">${item.price}</p>
                   <button
                     className="btn btn-accent w-full"
                     onClick={() => addToBasket(item)}
@@ -89,7 +98,6 @@ function App() {
       </div>
     </>
   );
-  
 }
 
 export default App;
